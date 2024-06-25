@@ -12,7 +12,7 @@ function App() {
     <Routes>
     <Route path='/' element={<Form />}></Route>
       <Route path='/register' element={<Form />}></Route>
-    <Route path='home' element={<Home />}></Route>
+    <Route path='/home' element={<Home />}></Route>
 
     </Routes>
     </AuthProvider>

@@ -26,18 +26,23 @@ import { useLocation, useNavigate ,} from "react-router-dom";
 function Home() {
   const location = useLocation();
   const navigate = useNavigate();
-  // const history =useHistory()
+  // const history =useHistory();
+  const handleLogout =()=>{
+    Cookies.remove()
+  navigate('/register')
+  }
 console.log(location.pathname,"pathname using useLocation")
   const [users, setUsers] = useState([]);
   const [userToDelete, setUserToDelete] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState();
-
+  const [userToEdit, setUserToEdit] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [expandedRow, setExpandedRow]= useState(null); //Keeps track of the currently expanded row (user id) to show details.
   
   // Fetch data from API
   const fetchData = async (error) => {
     try {
-      const response = await fetch("http://localhost:3030/getallusers");
+      const response = await fetch("http://localhost:4000/getallusers");
       if (!response.ok) {
         console.log("error",error);
       }
@@ -57,14 +62,25 @@ console.log(location.pathname,"pathname using useLocation")
     setUserToDelete(user);
     setConfirmDialogOpen(true);
   };
- 
+  const handleEditClick = (user) => {
+    navigate('/register',{state:{data:user}})
+    console.log(user,"<-----user")
 
+  };
+  useEffect(() => {
+    const user = Cookies.get('RegisterFormData');
+    if (user) {
+      console.log("--------user home--------", user)
+      setUserToEdit(JSON.parse(user));
+      // Cookies.remove('UserToEdit'); // Clear cookie after retrieving data
+    }
+  }, []);
   
   const handleConfirmDelete = async () => {
     if (userToDelete) {
       try {
         const response = await fetch(
-          `http://localhost:3030/deleteuser/${userToDelete.id}`,
+          `http://localhost:4000/deleteuser/${userToDelete.id}`,
           {
             method: "DELETE",
           }
@@ -85,6 +101,34 @@ console.log(location.pathname,"pathname using useLocation")
       }
     }
   };
+  const handleEditSubmit = async (data) => {
+    if (!userToEdit) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:4000/edituser/${userToEdit.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        console.log("Error updating user");
+        return;
+      }
+
+      // Fetch updated data after successful edit
+      await fetchData();
+      setEditDialogOpen(false);
+      setUserToEdit(null);
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
 
   //toggles the expanded state (expandedRow) of a row based on the rowId.
   const handleExpandRow = (rowId) => {
@@ -98,12 +142,29 @@ console.log(location.pathname,"pathname using useLocation")
   const handleCloseDialog = () => {
     setConfirmDialogOpen(false);
     setUserToDelete(null);
+    setEditDialogOpen(false);
   };
-  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserToEdit((prevUser) => ({
+      ...prevUser,
+      [name]: value,
+    }));
+  };
 
   return (
     <>
+    <div style={{
+      // border:'2px solid red',
+      display:'flex',
+      flexDirection:'row',
+      justifyContent:'space-between',
+      marginBottom:'10px'
+
+    }}>
       <h1 style={{ textAlign: "center" }}>Registration Data</h1>
+      <Button variant="contained" onClick={handleLogout}>Logout</Button>
+    </div>
       <TableContainer component={Paper}>
         <Table aria-label="simple table">
           <TableHead>
@@ -140,7 +201,7 @@ console.log(location.pathname,"pathname using useLocation")
               
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent row click propagation
-                        // handleEditClick(user);
+                        handleEditClick(user);
                       }}
                     >
                       <EditIcon />
@@ -195,7 +256,42 @@ console.log(location.pathname,"pathname using useLocation")
           </Button>
         </DialogActions>
       </Dialog>
-     
+      <Dialog open={editDialogOpen} onClose={handleCloseDialog}>
+        <DialogContent>
+          <TextField
+      
+            label="First Name"
+            fullWidth
+            name="f_name"
+            value={userToEdit?.f_name}
+            onChange={handleInputChange}
+          />
+          <TextField
+            // margin="dense"
+            label="Last Name"
+            fullWidth
+            name="l_name"
+            defaultValue={userToEdit ? userToEdit.lname : ""}
+            onChange={handleInputChange}
+          />
+          <TextField
+            // margin="dense"
+            label="Email"
+            fullWidth
+            name="email"
+            value={userToEdit ? userToEdit.email : ""}
+            onChange={handleInputChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleEditSubmit} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
