@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -15,86 +15,86 @@ import {
   TextField,
   CircularProgress,
 } from "@mui/material";
-import "../../src/assets/css/design.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import Swal from "sweetalert2";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 const Form = () => {
   const {
     register,
+    control,
     handleSubmit,
     watch,
     formState: { errors },
     setValue,
   } = useForm({
-    mode: "all",
+    mode: 'onChange'
   });
 
   const location = useLocation();
   const navigate = useNavigate();
-  //states
-  const [loading, setLoading] = useState(false); //state for loader
-  const [registerError, setRegisterError] = useState(""); //state for setting up the errors in input fields
-  const [showPassword, setShowPassword] = useState(false); //state for toggling the visibility on & off for passowrd
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); //state for toggling the visibility on & off for ConfirmPassowrd
-  const [userData, setUserData] = useState(null); // State to store user data for editing
-  const[profilePicture, setProfilePicture]=useState(null) //state for setting the profile picture
+
+  const [loading, setLoading] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [showImageInput, setShowImageInput] = useState(false);
+  const [contact,setContact]= useState("")
+
   useEffect(() => {
-    // Check if there is state data in location indicating edit functionality
     if (location.state && location.state.data) {
       const userData = location.state.data;
-      setUserData(userData); // Set user data for editing
-      setValue("f_name", userData.f_name); // Set default values in the form fields
+      setUserData(userData);
+      setValue("f_name", userData.f_name);
       setValue("l_name", userData.l_name);
       setValue("email", userData.email);
       setValue("gender", userData.gender);
-      setValue("d_o_b", userData.d_o_b);
-      setValue("countryCode", userData.countryCode);
-      setValue("contact", userData.contact);
+      setValue("d_o_b", userData.d_o_b.substr(0, 10));
+      setValue("contact",String(userData.contact));
       setValue("designation", userData.designation);
+      setValue("hobbies", userData.hobbies);
+      setContact(String( userData.contact))
+      console.log(typeof userData.contact);
+      if (userData) {
+        setShowImageInput(true);
+      }
     }
   }, [location.state, setValue]);
 
-
-
   const onSubmit = async (data) => {
+    console.log(data);
+    // return
     setLoading(true);
-    const obj = {
-      firstname: data.f_name,
-      lastname: data.l_name,
-      email: data.email,
-      password: data.password,
-      gender: data.gender,
-      contact: data.contact,
-      dob: data.d_o_b,
-      countryCode: data.countryCode,
-      designation: data.designation,
-      hobbies: data.hobbies,
-      profilePicture:data.fileImage,
-    };
+    const form = new FormData();
+    form.append("f_name", data.f_name);
+    form.append("l_name", data.l_name);
+    form.append("email", data.email);
+    form.append("password", data.password);
+    form.append("gender", data.gender);
+    form.append("contact", data.contact);
+    form.append("d_o_b", data.d_o_b);
+    form.append("designation", data.designation);
+    form.append("hobbies", data.hobbies);
+
     if (userData) {
-      if (data.password) {
-        obj.password = data.password;
-      } else {
-        obj.password = data.password;
-      }
+      form.append("fileImage", profilePicture);
     }
-
-    Cookies.set("RegisterFormData", JSON.stringify(obj), { expires: 7 });
-
     try {
       let response;
       if (userData) {
         // Editing existing user
-         response=  await fetch(
+        if (data.password) {
+          form.append("password", data.password);
+        }
+        response = await fetch(
           `http://localhost:4000/edituser/${userData.id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
+            body: form,
           }
         );
       } else {
@@ -116,27 +116,18 @@ const Form = () => {
           title: "Oops...",
           text: "Something went wrong!, Please try again later",
         });
-        // setRegisterError("Error submitting form. Please try again later.");
-        // return;
-      }
-      else { 
+      } else {
         setRegisterError("");
+        Cookies.set("RegisterFormData", JSON.stringify(data), { expires: 7 });
         Swal.fire({
           title: "Good job!",
-          text: "Your data has been submitted successfully!",
-          icon: "success",
-        });
-      navigate("/home");
-
-      }
-      if (userData) {
-        Swal.fire({
-          title: "yayyy!!!",
-          text: "Your data has been updated successfully!",
+          text: userData
+            ? "Your data has been updated successfully!"
+            : "Your data has been submitted successfully!",
           icon: "success",
         });
         navigate("/home");
-      } 
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       Swal.fire({
@@ -144,24 +135,36 @@ const Form = () => {
         title: "Oops...",
         text: "Something went wrong!, Please try again later",
       });
-      // setRegisterError("Error submitting form. Please try again later.");
-
     } finally {
       setLoading(false);
     }
   };
- 
+
+  const onEditSubmit = async (data) => {
+    // You can use the same onSubmit function for both editing and registration
+    await onSubmit(data);
+  };
+  const hobbies= watch("hobbies",[])
+  console.log(hobbies,"hobb");
   return (
     <>
-      <h1>Registration Form</h1>
+      <h1>{userData ? "Edit User" : "Registration Form"}</h1>
       <div id="body">
         <div id="Div">
-          <form onSubmit={handleSubmit(onSubmit)} id="formSubmit">
-            <FormLabel>Profile Picture</FormLabel>
-            <input type="file" name="fileImage" 
-            accept="image"
-            onChange={(e)=>setProfilePicture(e.target.files[0])} 
-            {...register('fileImage',{message:'Please select an image'})}></input>
+          <form
+            onSubmit={handleSubmit(userData ? onEditSubmit : onSubmit)}
+            id="formSubmit"
+          >
+            {showImageInput && (
+              <>
+                <p style={{ marginBottom: "5px" }}>Profile Picture</p>
+                <input
+                  type="file"
+                  name="fileImage"
+                  onChange={(e) => setProfilePicture(e.target.files[0])}
+                />
+              </>
+            )}
             {errors.fileImage && (
               <span style={{ color: "red", fontSize: 12, fontWeight: "bold" }}>
                 {errors.fileImage.message}
@@ -225,8 +228,7 @@ const Form = () => {
                 pattern: {
                   value:
                     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]{1,3})+$/,
-                  message:
-                    "Please enter a valid email (e.g. abc@example.com)",
+                  message: "Please enter a valid email (e.g. abc@example.com)",
                 },
               })}
             />
@@ -313,46 +315,30 @@ const Form = () => {
                 {errors.d_o_b.message}
               </span>
             )}
-
-            <select
-              style={{ width: "30%", marginTop: "30px" }}
-              id="countryCode"
-              name="countryCode"
-              {...register("countryCode", {
-                message: "Country code is required",
-              })}
-            >
-              <option value="+1">+1 (USA)</option>
-              <option value="+91">+91 (India)</option>
-              <option value="+61">+61 (Australia)</option>
-              <option value="+49">+49 (Germany)</option>
-            </select>
-            {errors.countryCode && (
-              <span style={{ color: "red", fontSize: 12, fontWeight: "bold" }}>
-                {errors.countryCode.message}
-              </span>
-            )}
-            <TextField
-              style={{ marginTop: "-45px", marginLeft: "100px" }}
-              label="Mobile Number"
-              name="contact"
-              type="tel"
-              maxLength={10}
-              variant="standard"
-              {...register("contact", {
-                required: "Mobile number is required",
-                pattern: {
-                  value: /^(?!0+$)\d{5}-?\d{5}$/,
-                  message: "Please enter a valid 10-digit mobile number",
-                },
-              })}
-            />
-            {errors.contact && (
-              <span style={{ color: "red", fontSize: 12, fontWeight: "bold" }}>
-                {errors.contact.message}
-              </span>
-            )}
-
+    
+      <Controller
+        control={control}
+        name="contact"
+        rules={{ required: "Mobile number is required" }} // Validation rules
+        render={({ field }) => (
+          <PhoneInput
+            {...field}
+            inputProps={{
+              name: "contact",
+              required: "Mobile Number is required",
+            }}
+            country={'in'}  // Default country code
+            onChange={(contact) => {
+              setValue("contact", contact); // Update form value
+            }}
+          />
+        )}
+      />
+      {errors.contact && (
+        <span style={{ color: "red", fontSize: 12, fontWeight: "bold" }}>
+          {errors.contact.message}
+        </span>
+      )}
             <FormLabel style={{ marginTop: "20px" }}>Designation</FormLabel>
             <FormControl variant="standard">
               <Select
@@ -380,16 +366,56 @@ const Form = () => {
             <FormLabel style={{ marginTop: "10px" }}>Hobbies</FormLabel>
             <FormGroup style={{ marginLeft: "80px", marginTop: "-30px" }}>
               <FormControlLabel
-                control={<Checkbox {...register("hobbies")} value="reading" />}
+                control={
+                  <Checkbox
+                    {...register("hobbies")}
+                    value="reading"
+
+                    checked={hobbies?.includes('reading')}
+
+                  />
+                }
                 label="Reading"
               />
+         
               <FormControlLabel
-                control={<Checkbox {...register("hobbies")} value="sports" />}
+                control={
+                  <Checkbox
+                    {...register("hobbies")}
+                    value="sports"
+                    // checked={Boolean(watch('hobbies')?.includes('sports'))}
+                    checked={hobbies?.includes('sports')}
+
+
+                  />
+                }
                 label="Sports"
               />
               <FormControlLabel
-                control={<Checkbox {...register("hobbies")} value="music" />}
+                control={
+                  <Checkbox
+                    {...register("hobbies")}
+                    value="music"
+                    // checked={Boolean(watch('hobbies')?.includes('music'))}
+                    checked={hobbies?.includes('music')}
+
+                  />
+                }
                 label="Music"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    {...register("hobbies")}
+                    value="writing"
+                    // checked={Boolean(watch('hobbies')?.includes('writing'))}
+                    checked={hobbies?.includes('writing')}
+
+
+
+                  />
+                }
+                label="Writing"
               />
             </FormGroup>
             {errors.hobbies && (

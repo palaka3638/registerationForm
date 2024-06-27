@@ -16,38 +16,33 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
+  // TextField,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import "../../src/assets/css/design.css";
-import { useLocation, useNavigate ,} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
-  const location = useLocation();
+  // const location = useLocation();
   const navigate = useNavigate();
-  // const history =useHistory();
-  const handleLogout =()=>{
-    Cookies.remove()
-  navigate('/register')
-  }
-console.log(location.pathname,"pathname using useLocation")
+  // console.log(location.pathname, "pathname using useLocation");
   const [users, setUsers] = useState([]);
   const [userToDelete, setUserToDelete] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState();
   const [userToEdit, setUserToEdit] = useState(null);
+  console.log(userToEdit)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [expandedRow, setExpandedRow]= useState(null); //Keeps track of the currently expanded row (user id) to show details.
-  
+  const [expandedRow, setExpandedRow] = useState(null); //Keeps track of the currently expanded row (user id) to show details.
+  // console.log(userToEdit);
   // Fetch data from API
   const fetchData = async (error) => {
     try {
       const response = await fetch("http://localhost:4000/getallusers");
       if (!response.ok) {
-        console.log("error",error);
+        console.log("error", error);
       }
       let data = await response.json();
-      // console.log("data", data);
       setUsers(data[0]); // Update state with fetched data
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -63,19 +58,15 @@ console.log(location.pathname,"pathname using useLocation")
     setConfirmDialogOpen(true);
   };
   const handleEditClick = (user) => {
-    navigate('/register',{state:{data:user}})
-    console.log(user,"<-----user")
-
+    navigate("/register", { state: { data: user } });
   };
   useEffect(() => {
-    const user = Cookies.get('RegisterFormData');
+    const user = Cookies.get("RegisterFormData");
     if (user) {
-      console.log("--------user home--------", user)
       setUserToEdit(JSON.parse(user));
-      // Cookies.remove('UserToEdit'); // Clear cookie after retrieving data
     }
   }, []);
-  
+
   const handleConfirmDelete = async () => {
     if (userToDelete) {
       try {
@@ -101,34 +92,6 @@ console.log(location.pathname,"pathname using useLocation")
       }
     }
   };
-  const handleEditSubmit = async (data) => {
-    if (!userToEdit) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:4000/edituser/${userToEdit.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        console.log("Error updating user");
-        return;
-      }
-
-      // Fetch updated data after successful edit
-      await fetchData();
-      setEditDialogOpen(false);
-      setUserToEdit(null);
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
-  };
 
   //toggles the expanded state (expandedRow) of a row based on the rowId.
   const handleExpandRow = (rowId) => {
@@ -144,101 +107,100 @@ console.log(location.pathname,"pathname using useLocation")
     setUserToDelete(null);
     setEditDialogOpen(false);
   };
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUserToEdit((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
-  };
+  // const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setUserToEdit((prevUser) => ({
+  //     ...prevUser,
+  //     [name]: value,
+  //   }));
+  // };
 
   return (
     <>
-    <div style={{
-      // border:'2px solid red',
-      display:'flex',
-      flexDirection:'row',
-      justifyContent:'space-between',
-      marginBottom:'10px'
-
-    }}>
       <h1 style={{ textAlign: "center" }}>Registration Data</h1>
-      <Button variant="contained" onClick={handleLogout}>Logout</Button>
-    </div>
       <TableContainer component={Paper}>
         <Table aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell id="col">First Name</TableCell>
-              <TableCell id="col">Last Name</TableCell>
+              <TableCell id="col">F_Name</TableCell>
+              <TableCell id="col">L_Name</TableCell>
               <TableCell id="col">Gender</TableCell>
               <TableCell id="col">Email</TableCell>
               <TableCell id="col">Contact</TableCell>
               <TableCell id="col">DOB (DD/MM/YYYY)</TableCell>
               <TableCell id="col">Designation</TableCell>
               <TableCell id="col">Hobbies</TableCell>
+              <TableCell id="col">Image</TableCell>
               <TableCell id="col">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-          {users.map((user) => (
-              <React.Fragment key={user.id}>
-                <TableRow onClick={() => handleExpandRow(user.id)}>
-                  <TableCell>{user.f_name}</TableCell>
-                  <TableCell>{user.l_name}</TableCell>
-                  <TableCell>{user.gender}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.contact}</TableCell>
-                  <TableCell>
-                    {new Date(user.d_o_b).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{user.designation}</TableCell>
-                  <TableCell>{user.hobbies.join(", ")}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      aria-label="edit"
-                      id="editBtn"
-              
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent row click propagation
-                        handleEditClick(user);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      aria-label="delete"
-                      id="delBtn"
+            {users.length === 0 ? (
+              <h3 style={{ textAlign: "center", color: "grey" }}>
+                No Data Available
+              </h3>
+            ) : (
+              users.map((user) => (
+                <React.Fragment key={user.id}>
+                  <TableRow onClick={() => handleExpandRow(user.id)}>
+                    <TableCell>{user.f_name}</TableCell>
+                    <TableCell>{user.l_name}</TableCell>
+                    <TableCell>{user.gender}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>+{ user.contact.toString().substring(0,2)} { user.contact.toString().substring(2)}</TableCell>
+                    <TableCell>
+                      {new Date(user.d_o_b).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{user.designation}</TableCell>
+                    <TableCell>{user.hobbies.join(", ")}</TableCell>
+                    <TableCell>{user.fileImage? user.fileImage :"No image selected"}</TableCell>
 
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent row click propagation
-                        handleDeleteClick(user);
+                    <TableCell
+                      style={{
+                        display: "flex",
+                        marginTop: "10px",
+                        padding: "0px",
                       }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-                {expandedRow === user.id && (
-                  <TableRow>
-                    <TableCell >
-                        <Paper>
-                          <p>User Details:</p>
-                          <p>First Name: {user.f_name}</p>
-                          <p>Last Name: {user.l_name}</p>
-                          <p>Email: {user.email}</p>
-                          <p>Contact: {user.contact}</p>
-                          <p>DOB: {new Date(user.d_o_b).toLocaleDateString()}</p>
-                          <p>Designation: {user.designation}</p>
-                          <p>Hobbies: {user.hobbies.join(", ")}</p>
-                        </Paper>
-               
+                      <IconButton
+                        aria-label="edit"
+                        id="editBtn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click propagation
+                          handleEditClick(user);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        aria-label="delete"
+                        id="delBtn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click propagation
+                          handleDeleteClick(user);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-            
+                  {expandedRow === user.id && (
+                    <TableRow>
+                      <p>User Details:</p>
+                      <p>First Name: {user.f_name}</p>
+                      <p>Last Name: {user.l_name}</p>
+                      <p>Email: {user.email}</p>
+                      <p>Country Code: {user.countryCode}</p>
+                      <p>Contact: {user.contact}</p>
+                      <p>DOB: {new Date(user.d_o_b).toLocaleDateString()}</p>
+                      <p>Designation: {user.designation}</p>
+                      <p>Hobbies: {user.hobbies.join(", ")}</p>
+                      <p>Image: {user.fileImage}</p>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -256,46 +218,9 @@ console.log(location.pathname,"pathname using useLocation")
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={editDialogOpen} onClose={handleCloseDialog}>
-        <DialogContent>
-          <TextField
-      
-            label="First Name"
-            fullWidth
-            name="f_name"
-            value={userToEdit?.f_name}
-            onChange={handleInputChange}
-          />
-          <TextField
-            // margin="dense"
-            label="Last Name"
-            fullWidth
-            name="l_name"
-            defaultValue={userToEdit ? userToEdit.lname : ""}
-            onChange={handleInputChange}
-          />
-          <TextField
-            // margin="dense"
-            label="Email"
-            fullWidth
-            name="email"
-            value={userToEdit ? userToEdit.email : ""}
-            onChange={handleInputChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleEditSubmit} color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Dialog open={editDialogOpen} onClose={handleCloseDialog}></Dialog>
     </>
   );
 }
 
 export default Home;
-
-
