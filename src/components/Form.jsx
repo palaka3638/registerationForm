@@ -30,7 +30,7 @@ const Form = () => {
     formState: { errors },
     setValue,
   } = useForm({
-    mode: 'onChange'
+    mode: 'all'
   });
 
   const location = useLocation();
@@ -44,7 +44,7 @@ const Form = () => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [showImageInput, setShowImageInput] = useState(false);
   const [contact,setContact]= useState("")
-
+  const [selectedHobbies, setSelectedHobbies] = useState([]);
   useEffect(() => {
     if (location.state && location.state.data) {
       const userData = location.state.data;
@@ -56,7 +56,8 @@ const Form = () => {
       setValue("d_o_b", userData.d_o_b.substr(0, 10));
       setValue("contact",String(userData.contact));
       setValue("designation", userData.designation);
-      setValue("hobbies", userData.hobbies);
+      // setValue("hobbies", userData.hobbies);
+      setSelectedHobbies(userData.hobbies || []);
       setContact(String( userData.contact))
       console.log(typeof userData.contact);
       if (userData) {
@@ -78,7 +79,7 @@ const Form = () => {
     form.append("contact", data.contact);
     form.append("d_o_b", data.d_o_b);
     form.append("designation", data.designation);
-    form.append("hobbies", data.hobbies);
+    form.append("hobbies", selectedHobbies.join(', '));
 
     if (userData) {
       form.append("fileImage", profilePicture);
@@ -141,11 +142,23 @@ const Form = () => {
   };
 
   const onEditSubmit = async (data) => {
-    // You can use the same onSubmit function for both editing and registration
     await onSubmit(data);
   };
-  const hobbies= watch("hobbies",[])
-  console.log(hobbies,"hobb");
+  // let hobbies =[];
+  // // hobbies = watch("hobbies",[])
+  // // hobbies.push('hobby')
+  // console.log(hobbies,"hobb");
+  // const array=[]
+  // console.log(typeof hobbies, hobbies,"type of hobbies");
+  const handleHobbyChange = (event) => {
+    const hobby = event.target.value;
+    if (selectedHobbies.includes(hobby)) {
+      setSelectedHobbies(selectedHobbies.filter((h) => h !== hobby));
+    } else {
+      setSelectedHobbies([...selectedHobbies, hobby]);
+    }
+  };
+
   return (
     <>
       <h1>{userData ? "Edit User" : "Registration Form"}</h1>
@@ -370,35 +383,36 @@ const Form = () => {
                   <Checkbox
                     {...register("hobbies")}
                     value="reading"
-
-                    checked={hobbies?.includes('reading')}
+                    checked={selectedHobbies.includes("reading")}
+                    onChange={handleHobbyChange}
+                    // checked={hobbies?.includes('reading')}
 
                   />
                 }
                 label="Reading"
               />
-         
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    {...register("hobbies")}
-                    value="sports"
-                    // checked={Boolean(watch('hobbies')?.includes('sports'))}
-                    checked={hobbies?.includes('sports')}
-
-
-                  />
-                }
-                label="Sports"
-              />
+         <FormControlLabel
+    control={
+      <Checkbox
+        {...register("hobbies")}
+        value="sports"
+        checked={selectedHobbies.includes("sports")}
+        onChange={handleHobbyChange}
+        // checked={hobbies?.includes("sports")}
+      />
+    }
+    label="Sports"
+  />
+            
               <FormControlLabel
                 control={
                   <Checkbox
                     {...register("hobbies")}
                     value="music"
                     // checked={Boolean(watch('hobbies')?.includes('music'))}
-                    checked={hobbies?.includes('music')}
-
+                    // checked={hobbies?.includes('music')}
+                    checked={selectedHobbies.includes("music")}
+                    onChange={handleHobbyChange}
                   />
                 }
                 label="Music"
@@ -409,10 +423,9 @@ const Form = () => {
                     {...register("hobbies")}
                     value="writing"
                     // checked={Boolean(watch('hobbies')?.includes('writing'))}
-                    checked={hobbies?.includes('writing')}
-
-
-
+                    // checked={hobbies?.includes('writing')}
+                    checked={selectedHobbies.includes("writing")}
+                    onChange={handleHobbyChange}
                   />
                 }
                 label="Writing"
